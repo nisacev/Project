@@ -1,2 +1,358 @@
 # Project
 Türkiye`s Demographic Transformation
+
+DataSet: 
+https://nip.tuik.gov.tr/?value=YasGrubunaGoreNufus
+
+Plots and Codes:
+
+```{r message=FALSE}
+install.packages("readxl")
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("tidyverse")
+install.packages("treemapify")
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(treemapify)
+install.packages("devtools")
+library(devtools)
+devtools::install_github("htastan/TRmaps") 
+library(TRmaps)
+install.packages("sf")
+library(sf)
+
+data("tr_nuts3")
+
+```
+
+
+```{r}
+veri <- data.frame(
+  Yas_Grubu = c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+                "40-44","45-49","50-54","55-59","60-64","65-69","70-74",
+                "75-79","80-84","85+"),
+  Erkek = c(2606763,3274360,3314979,3298654,3235130,3336548,3182620,3174570,
+            3282536,2979015,2726368,2301684,2115272,1608416,1124799,
+            716554,374066,243536),
+  Kadin = c(2475623,3110725,3144115,3129876,3099499,3218069,3105980,3125998,
+            3245656,2933900,2739014,2277880,2115568,1725547,1316670,
+            964063,568407,470240))
+
+veri <- veri %>%
+  mutate(Kadin = -Kadin)
+
+veri_long <- veri %>%
+  tidyr::pivot_longer(cols = c("Erkek", "Kadin"),
+                      names_to = "Cinsiyet",
+                      values_to = "Nufus")
+
+veri_long$Yas_Grubu <- factor(veri_long$Yas_Grubu,
+                              levels = veri$Yas_Grubu)
+
+ggplot(veri_long, aes(x = Yas_Grubu, y = Nufus, fill = Cinsiyet)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark =".", scientific = FALSE)) +
+  labs(title = "Türkiye 2024 Population Pyramid",
+       x = "Age groups",
+       y = "Population",
+       fill = "Sex") +
+  theme_classic() +
+  theme(text = element_text(face = "bold", size = 14), 
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    legend.text = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 13))+
+   scale_fill_manual(values = c("Erkek" = "#003366", "Kadin" = "#990066"),labels = c( "Erkek"= "Male", 
+                "Kadin"= "Female"))
+
+ggsave("2024poppyrmaid.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2024poppyrmaid" src="https://github.com/user-attachments/assets/3d8a2ad0-b406-457c-b21d-ec0b53eb525d" />
+
+
+```{r}
+veri2020 <- data.frame(
+  Yas_Grubu = c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+                "40-44","45-49","50-54","55-59","60-64","65-69","70-74",
+                "75-79","80-84","85+"),
+  Erkek = c(3140172, 3349253, 3294985, 3201588, 3408434, 3240543, 3199710, 3270512,
+            3145645, 2788035, 2325190, 2273088, 1764938, 1399052, 960742, 
+            583671, 339767, 230660),
+  Kadin = c(2981535, 3177340, 3124952, 3028526, 3255202, 3130411, 3119184, 3203071,
+            3089465, 2775631, 2259442, 2304499, 1809456, 1539663, 1170963, 
+            771675, 521432, 435930)
+)
+
+veri2020 <- veri2020 %>% mutate(Kadin = -Kadin)
+
+veri_long2020 <- veri2020 %>%
+  tidyr::pivot_longer(cols = c("Erkek", "Kadin"),
+                      names_to = "Cinsiyet",
+                      values_to = "Nufus")
+
+veri_long2020$Yas_Grubu <- factor(veri_long2020$Yas_Grubu, levels = veri2020$Yas_Grubu)
+
+ggplot(veri_long2020, aes(x = Yas_Grubu, y = Nufus, fill = Cinsiyet)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark = ".", scientific = FALSE)) +
+  labs(title = "Türkiye 2020 Population Pyramid", x = "Age groups", y = "Population", fill = "Sex") +
+  theme_classic() +
+  scale_fill_manual(
+    values = c("Erkek" = "#003366", "Kadin" = "#990055"), 
+    labels = c( "Erkek"= "Male", 
+                "Kadin"= "Female")) +
+  theme(text = element_text(face = "bold", size = 14), 
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    legend.text = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 13)) 
+
+ggsave("2020poppyrmaid.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2020poppyrmaid" src="https://github.com/user-attachments/assets/c0f013fd-8253-487c-a81b-4d1571dc71c4" />
+
+
+```{r}
+veri2016 <- data.frame(
+  Yas_Grubu = c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+                "40-44","45-49","50-54","55-59","60-64","65-69","70-74",
+                "75-79","80-84","85+"),
+  Erkek = c(3314542, 3253345, 3147133, 3400443, 3247764, 3169360, 3196645, 3275175,
+            2833655, 2412875, 2381640, 1855171, 1636510, 1132464, 763121, 
+            512607, 336206, 174994),
+  Kadin = c(3144753, 3084099, 2981910, 3222876, 3117959, 3076681, 3113766, 3219158,
+            2800662, 2335639, 2374604, 1860565, 1706438, 1280073, 917371, 
+            689443, 473119, 372105)
+)
+
+veri2016 <- veri2016 %>% mutate(Kadin = -Kadin)
+
+veri_long2016 <- veri2016 %>%
+  tidyr::pivot_longer(cols = c("Erkek", "Kadin"),
+                      names_to = "Cinsiyet",
+                      values_to = "Nufus")
+
+veri_long2016$Yas_Grubu <- factor(veri_long2016$Yas_Grubu, levels = veri2016$Yas_Grubu)
+
+ggplot(veri_long2016, aes(x = Yas_Grubu, y = Nufus, fill = Cinsiyet)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark = ".", scientific = FALSE)) +
+  labs(title = "Türkiye 2016 Population Pyramid", 
+       x = "Age groups", 
+       y = "Population", 
+       fill = "Sex") +
+  theme_classic() +
+  theme(text = element_text(face = "bold", size = 14), 
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    legend.text = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 13)) +
+  scale_fill_manual(values = c("Erkek" = "#003366", "Kadin" = "#990066"),labels = c( "Erkek"= "Male", 
+                "Kadin"= "Female"))
+
+ggsave("2016poppyrmaid.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2016poppyrmaid" src="https://github.com/user-attachments/assets/7430b82e-391a-4db2-a4df-de21cd3ab0d3" />
+
+
+```{r}
+veri2012 <- data.frame(
+  Yas_Grubu = c("0-4","5-9","10-14","15-19","20-24","25-29","30-34","35-39",
+                "40-44","45-49","50-54","55-59","60-64","65-69","70-74",
+                "75-79","80-84","85+"),
+  Erkek = c(3182650, 3161223, 3334509, 3286864, 3151253, 3185423, 3307333, 2890170,
+            2456499, 2368340, 2029218, 1727004, 1292769, 899831, 671942, 
+            484634, 289054, 128452),
+  Kadin = c(3016307, 2997741, 3164749, 3118688, 3034836, 3085255, 3237594, 2841007,
+            2498561, 2331081, 2009980, 1751578, 1375749, 1028555, 828184, 
+            617492, 456612, 277247)
+)
+
+veri2012 <- veri2012 %>% mutate(Kadin = -Kadin)
+
+veri_long2012 <- veri2012 %>%
+  tidyr::pivot_longer(cols = c("Erkek", "Kadin"),
+                      names_to = "Cinsiyet",
+                      values_to = "Nufus")
+
+veri_long2012$Yas_Grubu <- factor(veri_long2012$Yas_Grubu, levels = veri2012$Yas_Grubu)
+
+ggplot(veri_long2012, aes(x = Yas_Grubu, y = Nufus, fill = Cinsiyet)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  coord_flip() +
+  scale_y_continuous(labels = function(x) format(abs(x), big.mark = ".", scientific = FALSE)) +
+  labs(title = "Türkiye 2012 Population Pyramid", 
+       x = "Age groups", 
+       y = "Population", 
+       fill = "Sex") +
+  theme_classic() +
+  theme(text = element_text(face = "bold", size = 14), 
+    axis.text = element_text(face = "bold", size = 12),
+    axis.title = element_text(face = "bold", size = 14),
+    plot.title = element_text(face = "bold", size = 18, hjust = 0.5),
+    legend.text = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 13)) +
+  scale_fill_manual(values = c("Erkek" = "#003366", "Kadin" = "#990066"),labels = c( "Erkek"= "Male", 
+                "Kadin"= "Female"))
+
+ggsave("2012poppyrmaid.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2012poppyrmaid" src="https://github.com/user-attachments/assets/bd1d6770-194a-4801-9172-dd42f0765754" />
+
+
+```{r}
+
+tr.data<- left_join(tr_nuts3, poptr2 , by = c("name_tr" = "city"))
+```
+
+```{r message=FALSE}
+ggplot(tr.data) + 
+  geom_sf(aes(fill = grwt_rate)) +
+  geom_sf_text(aes(label=name_tr),size=2.5,fontface = "bold")+
+  theme_void()+
+  theme(
+   legend.position = "bottom",
+    plot.title = element_text(color = "#0F2D38", face = "bold", hjust = 0.5, size = 18),
+    legend.title = element_text(color = "#0F2D38", face = "bold", size = 14),
+    legend.text = element_text(face = "bold", size = 10))+
+  scale_fill_gradient2(low ="red", mid = "white", high = "darkblue")+
+  labs(title="Türkiye's 2024 Population Growth Rate",
+       fill="Growth Rate (%)")
+ggsave("2024popgrowth.png", width=10, height=7, dpi = 300,bg="white")
+```
+<img width="3000" height="2100" alt="2024popgrowth" src="https://github.com/user-attachments/assets/8f082fa6-d146-42a0-b666-b436015a0716" />
+
+
+```{r}
+nufus_yapisi <- data.frame(
+  Grup = c("child (0-14)", "working age (15-64)", "old (65+)"),
+  Oran = c(20.9, 68.4, 10.6)
+)
+
+ggplot(nufus_yapisi, aes(x = Grup, y = Oran, fill = Grup)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = paste0("%", Oran)), vjust = -0.5, fontface = "bold") +
+  scale_fill_manual(values = c("darkcyan", "#003366", "#990066")) +
+  theme_minimal() +
+  labs(title = "Population Structure of Türkiye (2024)",
+       x = "", y = "Share of the Population (%)") +
+  theme(legend.position = "none",plot.title = element_text(face = "bold", size = 20, hjust = 0.5),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 16))
+ggsave("2024popstructure.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2024popstructure" src="https://github.com/user-attachments/assets/a452b9f7-b670-47e7-a40c-31307cbb4fc2" />
+
+
+```{r}
+
+nufus_yapisi_2012 <- data.frame(
+  Grup = c("child (0-14)", "working age (15-64)", "old (65+)"),
+  Oran = c(24.9, 67.6, 7.5)
+)
+
+nufus_yapisi_2012$Grup <- factor(nufus_yapisi_2012$Grup, 
+                                 levels = c("child (0-14)", "old (65+)", "working age (15-64)"))
+
+ggplot(nufus_yapisi_2012, aes(x = Grup, y = Oran, fill = Grup)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = paste0("%", Oran)), vjust = -0.5, fontface = "bold") +
+  scale_fill_manual(values = c("darkcyan", "#003366", "#990066")) +
+  theme_minimal() +
+  labs(title = "Population Structure of Türkiye (2012)",
+       x = "", y = "Share of the Population (%)") +
+  theme(legend.position = "none", 
+        plot.title = element_text(face = "bold", size = 20, hjust = 0.5),
+        axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+        axis.text.y = element_text(face = "bold", size = 14, color = "black"),
+        axis.title.y = element_text(face = "bold", size = 16))
+
+ggsave("2012popstructure.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2012popstructure" src="https://github.com/user-attachments/assets/c3d863b1-c4ce-4265-8eb1-d4baa3cc8628" />
+
+
+```{r}
+
+bagimlilik_data <- data.frame(
+  Kategori = c("Genç Bağımlı (0-14)", "Yaşlı Bağımlı (65+)"),
+  Oran = c(30.9, 15.5)
+)
+
+ggplot(bagimlilik_data, aes(x = "", y = Oran, fill = Kategori)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  coord_flip() + 
+  theme_minimal() +
+  scale_fill_manual(values = c("#003366", "#990066"),labels = c( "Genç Bağımlı (0-14)"= "young addict (0-14)", 
+                "Yaşlı Bağımlı (65+)"= "old addict (65+)")) +
+  labs(title = "Demographic Burden in Türkiye (2024)",
+       subtitle = "The number of dependents for every 100 people who produce",
+       y = "Number of People", x = "",
+       fill = "Type of Addiction") +
+  geom_text(aes(label = paste0(Oran, " person")), 
+            position = position_stack(vjust = 0.5), color = "white", fontface = "bold",size = 6)+
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(face = "bold", size = 12),
+    axis.text = element_text(face = "bold", size = 13, color = "black"),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.title = element_text(face = "bold", size = 13),
+    legend.text = element_text(face = "bold", size = 12)
+  )
+ggsave("2024addiction.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2024addiction" src="https://github.com/user-attachments/assets/d0f7830a-6228-4c7b-b1b6-e620f9d59588" />
+
+
+```{r}
+
+bagimlilik_data_2012 <- data.frame(
+  Kategori = c("Genç Bağımlı (0-14)", "Yaşlı Bağımlı (65+)"),
+  Oran = c(36.8, 11.1)
+)
+
+ggplot(bagimlilik_data_2012, aes(x = "", y = Oran, fill = Kategori)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  coord_flip() +
+  theme_minimal() +
+  scale_fill_manual(values = c("#003366", "#990066"), 
+                    labels = c("Genç Bağımlı (0-14)" = "young addict (0-14)", 
+                               "Yaşlı Bağımlı (65+)" = "old addict (65+)")) +
+  labs(title = "Demographic Burden in Türkiye (2012)",
+       subtitle = "The number of dependents for every 100 people who produce",
+       y = "Number of People", x = "",
+       fill = "Type of Addiction") +
+  geom_text(aes(label = paste0(Oran, " person")),
+            position = position_stack(vjust = 0.5), color = "white", fontface = "bold", size = 6) +
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(face = "bold", size = 12),
+    axis.text = element_text(face = "bold", size = 13, color = "black"),
+    axis.title = element_text(face = "bold", size = 14),
+    legend.title = element_text(face = "bold", size = 13),
+    legend.text = element_text(face = "bold", size = 12)
+  )
+
+ggsave("2012addiction.png", width=10, height=6, dpi = 300)
+```
+<img width="3000" height="1800" alt="2012addiction" src="https://github.com/user-attachments/assets/ca92837e-d442-485c-9319-4dc251ffd40c" />
+
+
+
+
+
+
+
+
